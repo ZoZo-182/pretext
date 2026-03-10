@@ -71,7 +71,7 @@ type EngineProfile = {
 function getEngineProfile(): EngineProfile {
   if (typeof navigator === 'undefined') {
     return {
-      lineFitEpsilon: 0.002,
+      lineFitEpsilon: 0.005,
       carryCJKAfterClosingQuote: false,
     }
   }
@@ -94,7 +94,7 @@ function getEngineProfile(): EngineProfile {
 
   return {
     // WebKit is slightly more permissive than Chromium/Gecko at the line edge.
-    lineFitEpsilon: isSafari ? 1 / 64 : 0.002,
+    lineFitEpsilon: isSafari ? 1 / 64 : 0.005,
     // Chromium tends to keep Hangul that follows a closing quote cluster on the
     // next line, e.g. `어.”라고`, even when the shorter `어.”` would fit.
     carryCJKAfterClosingQuote: isChromium,

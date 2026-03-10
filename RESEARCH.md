@@ -254,7 +254,7 @@ The last few browser mismatches were not fixed by moving more work into `layout(
 What held up:
 - better preprocessing in `prepare()` / `prepareWithSegments()`: whitespace normalization, more selective punctuation merging, opening-quote forward merge, and CJK/Hangul punctuation handling
 - browser-specific diagnostics pages plus scripted checkers for Chrome, Safari, and Firefox
-- a very small browser-specific line-fit tolerance for borderline subpixel overflows (`0.002` for Chromium/Gecko, `1/64` for Safari/WebKit)
+- a very small browser-specific line-fit tolerance for borderline subpixel overflows (`0.005` for Chromium/Gecko, `1/64` for Safari/WebKit)
 
 What did **not** change:
 - `layout()` stayed arithmetic-only on cached widths
@@ -550,6 +550,27 @@ Effect on the Chrome Arabic fine sweep (`300..900`, step `1`):
 - after: `582/601 exact`
 - the last negative width (`527`) disappeared
 - remaining Arabic fine misses are now all positive one-line edge-tolerance cases
+
+## Arabic edge-tolerance reduction
+
+Once the remaining Arabic fine field was reduced to positive one-line misses only, the surviving cases all
+looked like the same Chromium behavior: the browser keeps one more short phrase with only about
+`0.003–0.005px` overflow.
+
+We revisited the non-Safari line-fit tolerance and raised it from `0.002` to `0.005`.
+
+What stayed stable:
+- browser accuracy corpus: `7680/7680`
+- Gatsby coarse sweep (`300..900`, step `10`): unchanged at `47/61 exact`
+- multilingual coarse corpus sweeps: Korean/Hindi/Arabic all stayed `61/61 exact`
+- hot-path `layout()`: still `0.03ms`
+
+Effect on the Arabic fine field:
+- before: `582/601 exact`
+- sampled remaining widths dropped from `19` to `7`
+- examples that became exact: `312`, `316`, `366`, `371`, `407`, `432`, `441`, `447`, `479`, `593`, `817`, `868`
+
+So this tolerance change looks like a justified browser-compat shim, not just a speculative hack.
 
 The current verification loop:
 - `bun run accuracy-check`

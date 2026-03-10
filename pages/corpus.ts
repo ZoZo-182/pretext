@@ -216,7 +216,7 @@ const diagnosticLineFitEpsilon = (() => {
     !ua.includes('CriOS/') &&
     !ua.includes('FxiOS/') &&
     !ua.includes('EdgiOS/')
-  return isSafari ? 1 / 64 : 0.002
+  return isSafari ? 1 / 64 : 0.005
 })()
 
 let corpusList: CorpusMeta[] = []
