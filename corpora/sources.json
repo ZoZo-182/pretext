@@ -36,6 +36,24 @@
     "notes": "Starter long-form stress corpus from Wikisource."
   },
   {
+    "id": "ar-al-bukhala",
+    "language": "ar",
+    "direction": "rtl",
+    "title": "البخلاء",
+    "source_url": "https://ar.wikisource.org/wiki/%D8%A7%D9%84%D8%A8%D8%AE%D9%84%D8%A7%D8%A1",
+    "output": "corpora/ar-al-bukhala.txt",
+    "font_family": "\"Geeza Pro\", \"Noto Naskh Arabic\", \"Arial\", serif",
+    "font_size_px": 20,
+    "line_height_px": 34,
+    "default_width": 600,
+    "min_width": 300,
+    "max_width": 900,
+    "characters": 256837,
+    "lines": 5434,
+    "acquired_via": "parse",
+    "notes": "Second Arabic stress corpus from Wikisource, trimmed to the actual prose after the front-matter table of contents."
+  },
+  {
     "id": "hi-eidgah",
     "language": "hi",
     "direction": "ltr",
@@ -52,5 +70,23 @@
     "lines": 185,
     "acquired_via": "parse",
     "notes": "Starter long-form stress corpus from Wikisource."
+  },
+  {
+    "id": "he-masaot-binyamin-metudela",
+    "language": "he",
+    "direction": "rtl",
+    "title": "מסעות בנימין מטודלה",
+    "source_url": "https://he.wikisource.org/wiki/%D7%9E%D7%A1%D7%A2%D7%95%D7%AA_%D7%91%D7%A0%D7%99%D7%9E%D7%99%D7%9F_%D7%9E%D7%98%D7%95%D7%93%D7%9C%D7%94",
+    "output": "corpora/he-masaot-binyamin-metudela.txt",
+    "font_family": "\"Times New Roman\", \"Noto Serif Hebrew\", serif",
+    "font_size_px": 20,
+    "line_height_px": 32,
+    "default_width": 600,
+    "min_width": 300,
+    "max_width": 900,
+    "characters": 25833,
+    "lines": 220,
+    "acquired_via": "parse",
+    "notes": "Hebrew travelogue stress corpus from Wikisource, with edit-warning scaffolding removed."
   }
 ]

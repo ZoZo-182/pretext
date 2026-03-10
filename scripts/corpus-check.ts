@@ -218,6 +218,7 @@ function printReport(report: CorpusReport): void {
 let serverProcess: ChildProcess | null = null
 const browser = parseBrowser(parseStringFlag('browser'))
 const port = parseNumberFlag('port', Number.parseInt(process.env['CORPUS_CHECK_PORT'] ?? '3210', 10))
+const timeoutMs = parseNumberFlag('timeout', Number.parseInt(process.env['CORPUS_CHECK_TIMEOUT_MS'] ?? '180000', 10))
 const sources = await loadSources()
 const id = parseStringFlag('id')
 
@@ -248,7 +249,7 @@ try {
       `&diagnostic=${diagnose ? 'full' : 'light'}` +
       `&requestId=${encodeURIComponent(requestId)}`
 
-    const report = await loadHashReport<CorpusReport>(session, url, requestId, browser)
+    const report = await loadHashReport<CorpusReport>(session, url, requestId, browser, timeoutMs)
     printReport(report)
     if (report.status === 'error') {
       process.exitCode = 1

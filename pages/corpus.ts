@@ -5,7 +5,9 @@ import {
   type PreparedTextWithSegments,
 } from '../src/layout.ts'
 import sourcesData from '../corpora/sources.json' with { type: 'json' }
+import arAlBukhala from '../corpora/ar-al-bukhala.txt' with { type: 'text' }
 import arRisalatAlGhufranPart1 from '../corpora/ar-risalat-al-ghufran-part-1.txt' with { type: 'text' }
+import heMasaotBinyaminMetudela from '../corpora/he-masaot-binyamin-metudela.txt' with { type: 'text' }
 import hiEidgah from '../corpora/hi-eidgah.txt' with { type: 'text' }
 import koUnsuJohEunNal from '../corpora/ko-unsu-joh-eun-nal.txt' with { type: 'text' }
 
@@ -953,8 +955,12 @@ async function loadSources(): Promise<CorpusMeta[]> {
 
 async function loadText(meta: CorpusMeta): Promise<string> {
   switch (meta.id) {
+    case 'ar-al-bukhala':
+      return arAlBukhala
     case 'ar-risalat-al-ghufran-part-1':
       return arRisalatAlGhufranPart1
+    case 'he-masaot-binyamin-metudela':
+      return heMasaotBinyaminMetudela
     case 'hi-eidgah':
       return hiEidgah
     case 'ko-unsu-joh-eun-nal':

@@ -20,11 +20,23 @@ Current bundle:
   - URL: <https://ar.wikisource.org/wiki/%D8%B1%D8%B3%D8%A7%D9%84%D8%A9_%D8%A7%D9%84%D8%BA%D9%81%D8%B1%D8%A7%D9%86/%D8%A7%D9%84%D8%AC%D8%B2%D8%A1_%D8%A7%D9%84%D8%A3%D9%88%D9%84>
   - Acquisition: Wikisource `extracts` API
 
+- `ar-al-bukhala.txt`
+  - Language: Arabic
+  - Source: Al-Jahiz, `البخلاء`
+  - URL: <https://ar.wikisource.org/wiki/%D8%A7%D9%84%D8%A8%D8%AE%D9%84%D8%A7%D8%A1>
+  - Acquisition: Wikisource `parse` API, trimmed to the real prose after the table of contents
+
 - `hi-eidgah.txt`
   - Language: Hindi
   - Source: Premchand, `प्रेमचंद की सर्वश्रेष्ठ कहानियां/ईदगाह`
   - URL: <https://hi.wikisource.org/wiki/%E0%A4%AA%E0%A5%8D%E0%A4%B0%E0%A5%87%E0%A4%AE%E0%A4%9A%E0%A4%82%E0%A4%A6_%E0%A4%95%E0%A5%80_%E0%A4%B8%E0%A4%B0%E0%A5%8D%E0%A4%B5%E0%A4%B6%E0%A5%8D%E0%A4%B0%E0%A5%87%E0%A4%B7%E0%A5%8D%E0%A4%A0_%E0%A4%95%E0%A4%B9%E0%A4%BE%E0%A4%A8%E0%A4%BF%E0%A4%AF%E0%A4%BE%E0%A4%82/%E0%A4%88%E0%A4%A6%E0%A4%97%E0%A4%BE%E0%A4%B9>
   - Acquisition: Wikisource `parse` API with simple HTML-to-text cleanup
+
+- `he-masaot-binyamin-metudela.txt`
+  - Language: Hebrew
+  - Source: `מסעות בנימין מטודלה`
+  - URL: <https://he.wikisource.org/wiki/%D7%9E%D7%A1%D7%A2%D7%95%D7%AA_%D7%91%D7%A0%D7%99%D7%9E%D7%99%D7%9F_%D7%9E%D7%98%D7%95%D7%93%D7%9C%D7%94>
+  - Acquisition: Wikisource `parse` API, with edit-warning scaffolding removed
 
 Machine-readable metadata lives in `sources.json`.
 

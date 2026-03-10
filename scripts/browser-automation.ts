@@ -171,10 +171,12 @@ export async function loadHashReport<T extends { requestId?: string }>(
   url: string,
   expectedRequestId: string,
   browser: BrowserKind,
+  timeoutMs = 60_000,
 ): Promise<T> {
   session.navigate(url)
 
-  for (let i = 0; i < 600; i++) {
+  const attempts = Math.max(1, Math.ceil(timeoutMs / 100))
+  for (let i = 0; i < attempts; i++) {
     await sleep(100)
     const reportJson = session.readReportText()
     if (reportJson === '' || reportJson === 'null') continue

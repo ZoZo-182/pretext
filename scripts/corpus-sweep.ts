@@ -60,6 +60,7 @@ type SweepOptions = {
   port: number
   browser: BrowserKind
   output: string | null
+  timeoutMs: number
 }
 
 function parseStringFlag(name: string): string | null {
@@ -110,6 +111,7 @@ function parseOptions(): SweepOptions {
     port: parseNumberFlag('port', Number.parseInt(process.env['CORPUS_CHECK_PORT'] ?? '3210', 10)),
     browser: parseBrowser(parseStringFlag('browser')),
     output: parseStringFlag('output'),
+    timeoutMs: parseNumberFlag('timeout', Number.parseInt(process.env['CORPUS_CHECK_TIMEOUT_MS'] ?? '180000', 10)),
   }
 }
 
@@ -192,7 +194,7 @@ try {
         `&report=1` +
         `&requestId=${encodeURIComponent(requestId)}`
 
-      const report = await loadHashReport<CorpusReport>(session, url, requestId, options.browser)
+      const report = await loadHashReport<CorpusReport>(session, url, requestId, options.browser, options.timeoutMs)
       if (report.status === 'error') {
         throw new Error(`Corpus page returned error for ${meta.id} @ ${width}: ${report.message ?? 'unknown error'}`)
       }
