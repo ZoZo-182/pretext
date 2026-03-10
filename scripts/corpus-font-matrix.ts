@@ -101,6 +101,26 @@ const FONT_MATRIX: Record<string, FontVariant[]> = {
       lineHeight: 32,
     },
   ],
+  'my-cunning-heron-teacher': [
+    {
+      id: 'default',
+      label: 'Myanmar MN',
+      font: '20px "Myanmar MN", "Myanmar Sangam MN", "Noto Sans Myanmar", serif',
+      lineHeight: 32,
+    },
+    {
+      id: 'myanmar-sangam',
+      label: 'Myanmar Sangam MN',
+      font: '20px "Myanmar Sangam MN", "Myanmar MN", serif',
+      lineHeight: 32,
+    },
+    {
+      id: 'noto-sans',
+      label: 'Noto Sans Myanmar',
+      font: '20px "Noto Sans Myanmar", "Myanmar MN", sans-serif',
+      lineHeight: 32,
+    },
+  ],
   'km-prachum-reuang-preng-khmer-volume-7-stories-1-10': [
     {
       id: 'default',

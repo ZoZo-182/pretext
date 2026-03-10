@@ -777,6 +777,49 @@ What we learned:
 One practical note:
 - the full `step=10` corpus sweep was much slower than the one-off checker, so `--samples=<n>` is the better first pass for large Southeast Asian corpora unless a width-by-width map is specifically needed
 
+## Lao corpus attempt (rejected)
+
+We tried broadening from Thai/Khmer to Lao with a multilingual Wikisource law page. That source turned out to be a bad canary, and we backed it out instead of keeping a dirty corpus in-repo.
+
+What went wrong:
+- the available Lao Wikisource text was a print-style raw export with manual wrapped lines
+- preserving those newlines was wrong because `white-space: normal` collapses them to inserted spaces
+- bluntly rejoining wrapped lines was also wrong because it erased legitimate structural boundaries and made the corpus less readable while not improving the mismatch field
+
+Useful conclusion:
+- this was a source-acquisition failure, not a trustworthy engine signal
+- do not keep Lao corpora derived from wrapped legal raw exports unless a cleaner rendered/source-text path exists
+
+## Myanmar corpus note
+
+The next Southeast Asian broadening step worked much better: a clean prose slice from Myanmar Wikisource (`စဉ်းလဲသော ဗျိုင်း (ဆရာ)`), trimmed to the story body only and excluding the teaching-guide scaffolding.
+
+Why this source is better:
+- it comes from `parse` output, not raw wrapped legal text
+- the story body isolates actual prose paragraphs
+- both Chrome and Safari show the same broad miss direction, so this looks like a real engine/canary class rather than dirty corpus noise
+
+Current first-pass results:
+- Chrome anchor widths:
+  - `300`: `-96px`
+  - `600`: `-32px`
+  - `800`: exact
+- Chrome sampled sweep (`--samples=9`): `4/9 exact`, remaining widths all negative
+- Safari anchor widths:
+  - `300`: `-96px`
+  - `600`: exact
+  - `800`: exact
+- Sampled font matrix:
+  - `Myanmar MN`: `1/3 exact`
+  - `Myanmar Sangam MN`: `2/3 exact`
+  - `Noto Sans Myanmar`: `1/3 exact`
+
+Interpretation:
+- unlike the rejected Lao law corpus, this is a clean and credible new canary
+- the remaining field is modest and consistent, not a total collapse
+- the first mismatch at `300px` is the same broad shape we saw in Lao: the browser breaks earlier than our model at an ordinary Southeast Asian break opportunity, even though the measured candidate line still fits numerically
+- that keeps the pressure on the same abstraction boundary: `Intl.Segmenter('word')` is a useful candidate-boundary source, but it is not the browser's full line-break model for these scripts
+
 ## Sampled cross-font corpus matrix
 
 The first font-axis pass was lighter-weight on purpose: keep the same corpora and widths, but swap only

@@ -54,6 +54,24 @@
     "notes": "Thai prose stress corpus from Wikisource, trimmed to the story body with header navigation and trailing footnote removed."
   },
   {
+    "id": "my-cunning-heron-teacher",
+    "language": "my",
+    "direction": "ltr",
+    "title": "စဉ်းလဲသော ဗျိုင်း (ဆရာ)",
+    "source_url": "https://my.wikisource.org/wiki/%E1%80%85%E1%80%89%E1%80%BA%E1%80%B8%E1%80%9C%E1%80%B2%E1%80%9E%E1%80%B1%E1%80%AC_%E1%80%97%E1%80%BB%E1%80%AD%E1%80%AF%E1%80%84%E1%80%BA%E1%80%B8_(%E1%80%86%E1%80%9B%E1%80%AC)",
+    "output": "corpora/my-cunning-heron-teacher.txt",
+    "font_family": "\"Myanmar MN\", \"Myanmar Sangam MN\", \"Noto Sans Myanmar\", serif",
+    "font_size_px": 20,
+    "line_height_px": 32,
+    "default_width": 600,
+    "min_width": 300,
+    "max_width": 900,
+    "characters": 2707,
+    "lines": 13,
+    "acquired_via": "parse",
+    "notes": "Myanmar prose stress corpus from Wikisource, trimmed to the story body only and excluding the teaching-guide scaffolding."
+  },
+  {
     "id": "km-prachum-reuang-preng-khmer-volume-7-stories-1-10",
     "language": "km",
     "direction": "ltr",

@@ -25,6 +25,12 @@ Current bundle:
   - URL: <https://th.wikisource.org/wiki/%E0%B8%99%E0%B8%B4%E0%B8%97%E0%B8%B2%E0%B8%99%E0%B9%80%E0%B8%A7%E0%B8%95%E0%B8%B2%E0%B8%A5/%E0%B9%80%E0%B8%A3%E0%B8%B7%E0%B9%88%E0%B8%AD%E0%B8%87%E0%B8%97%E0%B8%B5%E0%B9%88_1>
   - Acquisition: Wikisource `parse` API, trimmed to the story body with header navigation and trailing footnote removed
 
+- `my-cunning-heron-teacher.txt`
+  - Language: Myanmar
+  - Source: `စဉ်းလဲသော ဗျိုင်း (ဆရာ)`
+  - URL: <https://my.wikisource.org/wiki/%E1%80%85%E1%80%89%E1%80%BA%E1%80%B8%E1%80%9C%E1%80%B2%E1%80%9E%E1%80%B1%E1%80%AC_%E1%80%97%E1%80%BB%E1%80%AD%E1%80%AF%E1%80%84%E1%80%BA%E1%80%B8_(%E1%80%86%E1%80%9B%E1%80%AC)>
+  - Acquisition: Wikisource `parse` API, trimmed to the story body only and excluding the teaching-guide scaffolding
+
 - `km-prachum-reuang-preng-khmer-volume-7-stories-1-10.txt`
   - Language: Khmer
   - Source: `ប្រជុំរឿងព្រេងខ្មែរ/ភាគទី៧`

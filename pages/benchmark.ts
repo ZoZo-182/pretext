@@ -4,6 +4,7 @@ import { TEXTS } from '../src/test-data.ts'
 import arRisalatAlGhufranPart1 from '../corpora/ar-risalat-al-ghufran-part-1.txt' with { type: 'text' }
 import hiEidgah from '../corpora/hi-eidgah.txt' with { type: 'text' }
 import kmPrachumReuangPrengKhmerVolume7Stories1To10 from '../corpora/km-prachum-reuang-preng-khmer-volume-7-stories-1-10.txt' with { type: 'text' }
+import myCunningHeronTeacher from '../corpora/my-cunning-heron-teacher.txt' with { type: 'text' }
 import koUnsuJohEunNal from '../corpora/ko-unsu-joh-eun-nal.txt' with { type: 'text' }
 import thNithanVetalStory1 from '../corpora/th-nithan-vetal-story-1.txt' with { type: 'text' }
 
@@ -65,6 +66,15 @@ const CORPORA = [
     label: 'Thai prose',
     text: thNithanVetalStory1,
     font: '20px "Thonburi", "Noto Sans Thai", sans-serif',
+    lineHeight: 32,
+    width: 300,
+    sampleWidths: [240, 300, 360] as const,
+  },
+  {
+    id: 'my-cunning-heron-teacher',
+    label: 'Myanmar prose',
+    text: myCunningHeronTeacher,
+    font: '20px "Myanmar MN", "Myanmar Sangam MN", "Noto Sans Myanmar", serif',
     lineHeight: 32,
     width: 300,
     sampleWidths: [240, 300, 360] as const,
