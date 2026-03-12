@@ -1,29 +1,11 @@
-import { layoutNextLine, prepareWithSegments, type LayoutCursor, type PreparedTextWithSegments } from '../src/layout.ts'
+import { layoutNextLine, layoutWithLines, prepareWithSegments, type LayoutCursor, type LayoutLine, type PreparedTextWithSegments } from '../src/layout.ts'
+import { BODY_COPY } from './logo-columns-text.ts'
 
 const BODY_FONT = '16px "Helvetica Neue", Helvetica, Arial, sans-serif'
 const BODY_LINE_HEIGHT = 25
-const MOBILE_BODY_FONT = '14.5px "Helvetica Neue", Helvetica, Arial, sans-serif'
-const MOBILE_BODY_LINE_HEIGHT = 22
-
-const LEFT_COPY = `
-You can often see the future first in San Francisco. The conversation changes before the institutions do. One year people are still speaking cautiously about large training runs; the next year the working assumptions have moved to ten-billion-dollar clusters, then to a hundred billion, and then beyond that again. Each planning cycle adds another zero. What sounded extravagant six months ago becomes the conservative baseline for the next round of internal discussion.
-
-From the outside, this can sound like hype. From the inside, it looks more like convergence. Labs want more compute because compute still buys capability. Governments are waking up because capability is starting to look strategic. Capital keeps arriving because the prize is no longer framed as another software category but as leverage over the rest of the economy. These forces do not line up perfectly, but they do push in the same direction.
-`.trim().replace(/\s+/gu, ' ') + ' ' + `
-If that trajectory holds, the decisive variable is not a single model release. It is industrialization: power, chips, datacenters, supply chains, teams willing to spend enormous amounts of money because they think the next system over the horizon will repay the cost many times over. The question stops being whether frontier systems will improve and starts becoming how quickly the surrounding world can absorb what the labs are already trying to build.
-
-That is what makes the next decade feel strange. Progress looks both incremental and discontinuous at the same time: one more scaling law paper, one more procurement round, one more cluster plan, and then suddenly a threshold is crossed and the surrounding institutions realize they were preparing for a different world.
-`.trim().replace(/\s+/gu, ' ')
-
-const RIGHT_COPY = `
-The practical implication is not that every forecasted timeline will arrive on schedule. It is that the frontier is now expensive enough, concentrated enough, and geopolitically entangled enough that we should think about it as infrastructure. Training runs, chip allocations, grid capacity, export controls, and security posture begin to matter in the same sentence. Once that happens, the old habit of treating AI progress as a purely academic curve starts to break down.
-
-The people closest to this transition do not seem especially relaxed by it. Their confidence that systems will keep improving is often matched by uncertainty about who will govern the deployment environment, how much slack exists in the supply chain, and whether political systems are capable of responding at the speed that technical systems and capital markets are currently moving.
-`.trim().replace(/\s+/gu, ' ') + ' ' + `
-So the point of situational awareness is not prediction as performance. It is to notice the shape of the field while it is still possible to act. If compute, talent, state interest, and model capability are all compounding together, then the relevant question is not whether the curve is real in the abstract. The relevant question is what institutions, norms, and technical practices have to exist before that curve becomes impossible to manage gracefully.
-
-That is also why this text lands differently in a typographic setting than it does in a feed. On a page, the claims feel infrastructural rather than merely rhetorical. They sit there as objects to move around, compare, and return to. Even stripped to raw text, the argument keeps its essential mood: the world ahead may arrive through a long sequence of ordinary decisions, but the resulting change will not feel ordinary once it is here.
-`.trim().replace(/\s+/gu, ' ')
+const CREDIT_LINE_HEIGHT = 16
+const HEADLINE_TEXT = 'SITUATIONAL AWARENESS: THE DECADE AHEAD'
+const HEADLINE_FONT_FAMILY = '"Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, serif'
 
 type Rect = {
   x: number
@@ -48,6 +30,16 @@ type ImageMask = {
   rows: Array<MaskRow | null>
 }
 
+type PositionedLine = {
+  x: number
+  y: number
+  text: string
+}
+
+type BandObstacle = {
+  getIntervals: (bandTop: number, bandBottom: number) => Interval[]
+}
+
 const stage = document.getElementById('stage') as HTMLDivElement
 const headline = document.getElementById('headline') as HTMLHeadingElement
 const credit = document.getElementById('credit') as HTMLParagraphElement
@@ -55,12 +47,10 @@ const openaiLogo = document.getElementById('openai-logo') as HTMLImageElement
 const claudeLogo = document.getElementById('claude-logo') as HTMLImageElement
 
 const preparedByKey = new Map<string, PreparedTextWithSegments>()
+const maskByKey = new Map<string, Promise<ImageMask>>()
 const scheduled = { value: false }
 
 function getTypography(): { font: string, lineHeight: number } {
-  if (window.innerWidth <= 900) {
-    return { font: MOBILE_BODY_FONT, lineHeight: MOBILE_BODY_LINE_HEIGHT }
-  }
   return { font: BODY_FONT, lineHeight: BODY_LINE_HEIGHT }
 }
 
@@ -103,6 +93,15 @@ async function makeImageMask(src: string, width: number, height: number): Promis
   return { width, height, rows }
 }
 
+function getMask(src: string, width: number, height: number): Promise<ImageMask> {
+  const key = `${src}::${width}x${height}`
+  const cached = maskByKey.get(key)
+  if (cached !== undefined) return cached
+  const promise = makeImageMask(src, width, height)
+  maskByKey.set(key, promise)
+  return promise
+}
+
 function getMaskIntervalForBand(
   mask: ImageMask,
   rect: Rect,
@@ -134,6 +133,24 @@ function getMaskIntervalForBand(
   }
 }
 
+function getRectIntervalsForBand(
+  rects: Rect[],
+  bandTop: number,
+  bandBottom: number,
+  horizontalPadding: number,
+  verticalPadding: number,
+): Interval[] {
+  const intervals: Interval[] = []
+  for (const rect of rects) {
+    if (bandBottom <= rect.y - verticalPadding || bandTop >= rect.y + rect.height + verticalPadding) continue
+    intervals.push({
+      left: rect.x - horizontalPadding,
+      right: rect.x + rect.width + horizontalPadding,
+    })
+  }
+  return intervals
+}
+
 function subtractIntervals(base: Interval, intervals: Interval[]): Interval[] {
   let slots: Interval[] = [base]
 
@@ -157,19 +174,18 @@ function subtractIntervals(base: Interval, intervals: Interval[]): Interval[] {
   return slots.filter(slot => slot.right - slot.left >= 24)
 }
 
-function renderColumn(
+function layoutColumn(
   prepared: PreparedTextWithSegments,
+  startCursor: LayoutCursor,
   region: Rect,
-  font: string,
   lineHeight: number,
-  maskRect: Rect,
-  mask: ImageMask,
-  maskPadding: { horizontal: number, vertical: number },
-  lineClassName: string,
+  obstacles: BandObstacle[],
   side: 'left' | 'right',
-): void {
-  let cursor: LayoutCursor = { segmentIndex: 0, graphemeIndex: 0 }
+): { lines: PositionedLine[], bottom: number, cursor: LayoutCursor } {
+  let cursor: LayoutCursor = startCursor
   let lineTop = region.y
+  const lines: PositionedLine[] = []
+  const narrowBreakWidth = region.width * 0.76
 
   while (true) {
     if (lineTop + lineHeight > region.y + region.height) break
@@ -177,15 +193,9 @@ function renderColumn(
     const bandTop = lineTop
     const bandBottom = lineTop + lineHeight
     const blocked: Interval[] = []
-    const maskInterval = getMaskIntervalForBand(
-      mask,
-      maskRect,
-      bandTop,
-      bandBottom,
-      maskPadding.horizontal,
-      maskPadding.vertical,
-    )
-    if (maskInterval !== null) blocked.push(maskInterval)
+    for (const obstacle of obstacles) {
+      blocked.push(...obstacle.getIntervals(bandTop, bandBottom))
+    }
 
     const slots = subtractIntervals(
       { left: region.x, right: region.x + region.width },
@@ -202,19 +212,23 @@ function renderColumn(
     const width = slot.right - slot.left
     const line = layoutNextLine(prepared, cursor, width)
     if (line === null) break
+    const breaksInsideWord = line.end.graphemeIndex > 0
+    if (breaksInsideWord && width < narrowBreakWidth) {
+      lineTop += lineHeight
+      continue
+    }
 
-    const el = document.createElement('div')
-    el.className = lineClassName
-    el.textContent = line.text
-    el.style.left = `${Math.round(slot.left)}px`
-    el.style.top = `${Math.round(lineTop)}px`
-    el.style.font = font
-    el.style.lineHeight = `${lineHeight}px`
-    stage.appendChild(el)
+    lines.push({
+      x: Math.round(slot.left),
+      y: Math.round(lineTop),
+      text: line.text,
+    })
 
     cursor = line.end
     lineTop += lineHeight
   }
+
+  return { lines, bottom: lineTop, cursor }
 }
 
 function clearRenderedLines(): void {
@@ -224,99 +238,284 @@ function clearRenderedLines(): void {
   })
 }
 
-async function render(): Promise<void> {
-  const { font, lineHeight } = getTypography()
-  const pageWidth = window.innerWidth
-  const pageHeight = Math.max(window.innerHeight, 980)
+function materializeLines(lines: PositionedLine[], lineClassName: string, font: string, lineHeight: number): void {
+  for (const line of lines) {
+    const el = document.createElement('div')
+    el.className = lineClassName
+    el.textContent = line.text
+    el.style.left = `${line.x}px`
+    el.style.top = `${line.y}px`
+    el.style.font = font
+    el.style.lineHeight = `${lineHeight}px`
+    stage.appendChild(el)
+  }
+}
 
-  stage.style.minHeight = `${pageHeight}px`
+function getPreparedSingleLineWidth(text: string, font: string, lineHeight: number): number {
+  const result = layoutWithLines(getPrepared(text, font), 10_000, lineHeight)
+  return result.lines[0]?.width ?? 0
+}
 
+function titleLayoutKeepsWholeWords(lines: LayoutLine[]): boolean {
+  const words = new Set(HEADLINE_TEXT.split(/\s+/))
+  for (const line of lines) {
+    const tokens = line.text.split(' ').filter(Boolean)
+    for (const token of tokens) {
+      if (!words.has(token)) return false
+    }
+  }
+  return true
+}
+
+function fitHeadlineFontSize(headlineWidth: number, pageWidth: number): number {
+  const maxSize = Math.min(94.4, Math.max(55.2, pageWidth * 0.055))
+  let low = Math.max(22, pageWidth * 0.026)
+  let high = maxSize
+  let best = low
+  const words = HEADLINE_TEXT.split(/\s+/)
+
+  for (let iteration = 0; iteration < 10; iteration++) {
+    const size = (low + high) / 2
+    const lineHeight = Math.round(size * 0.92)
+    const font = `700 ${size}px ${HEADLINE_FONT_FAMILY}`
+    let widestWord = 0
+
+    for (const word of words) {
+      const width = getPreparedSingleLineWidth(word, font, lineHeight)
+      if (width > widestWord) widestWord = width
+    }
+
+    const titleLayout = layoutWithLines(getPrepared(HEADLINE_TEXT, font), headlineWidth, lineHeight)
+    const preservesWords = titleLayoutKeepsWholeWords(titleLayout.lines)
+
+    if (widestWord <= headlineWidth - 8 && preservesWords) {
+      best = size
+      low = size
+    } else {
+      high = size
+    }
+  }
+
+  return Math.round(best * 10) / 10
+}
+
+function buildLayout(pageWidth: number, pageHeight: number, lineHeight: number): {
+  gutter: number
+  headlineTop: number
+  headlineWidth: number
+  headlineFontSize: number
+  headlineLineHeight: number
+  headlineLines: LayoutLine[]
+  headlineRects: Rect[]
+  creditTop: number
+  leftRegion: Rect
+  rightRegion: Rect
+  openaiRect: Rect
+  claudeRect: Rect
+} {
   const gutter = Math.round(Math.max(52, pageWidth * 0.048))
-  const centerGap = Math.round(Math.max(34, pageWidth * 0.038))
-  const headlineTop = Math.round(Math.max(42, pageHeight * 0.065))
-  const headlineWidth = Math.round(Math.min(pageWidth - gutter * 2, pageWidth * 0.62))
-  const copyTop = headlineTop + Math.round(Math.max(142, pageWidth * 0.122))
+  const centerGap = Math.round(Math.max(28, pageWidth * 0.025))
   const columnWidth = Math.round((pageWidth - gutter * 2 - centerGap) / 2)
-  const columnHeight = pageHeight - copyTop - gutter
+
+  const headlineTop = Math.round(Math.max(42, pageWidth * 0.04))
+  const headlineWidth = Math.round(Math.min(pageWidth - gutter * 2, Math.max(columnWidth, pageWidth * 0.5)))
+  const headlineFontSize = fitHeadlineFontSize(headlineWidth, pageWidth)
+  const headlineLineHeight = Math.round(headlineFontSize * 0.92)
+  const headlineFont = `700 ${headlineFontSize}px ${HEADLINE_FONT_FAMILY}`
+  const preparedHeadline = prepareWithSegments(HEADLINE_TEXT, headlineFont)
+  const headlineResult = layoutWithLines(preparedHeadline, headlineWidth, headlineLineHeight)
+  const headlineLines = headlineResult.lines
+  const headlineRects = headlineLines.map((line, index) => ({
+    x: gutter,
+    y: headlineTop + index * headlineLineHeight,
+    width: Math.ceil(line.width),
+    height: headlineLineHeight,
+  }))
+
+  const creditGap = Math.round(Math.max(14, lineHeight * 0.6))
+  const creditTop = headlineTop + headlineResult.height + creditGap
+  const copyTop = creditTop + CREDIT_LINE_HEIGHT + Math.round(Math.max(20, lineHeight * 0.9))
+
+  const openaiTopLimit = copyTop + Math.round(lineHeight * 1.95)
+  const maxOpenaiSizeByHeight = Math.floor((pageHeight - gutter - openaiTopLimit) / 1.03)
+  const openaiSize = Math.round(Math.max(148, Math.min(372, pageWidth * 0.215, maxOpenaiSizeByHeight)))
+  const claudeSize = Math.round(Math.max(300, Math.min(470, pageWidth * 0.41, pageHeight * 0.5)))
 
   const leftRegion: Rect = {
     x: gutter,
     y: copyTop,
     width: columnWidth,
-    height: columnHeight,
+    height: pageHeight - copyTop - gutter,
   }
 
   const rightRegion: Rect = {
     x: gutter + columnWidth + centerGap,
-    y: copyTop,
+    y: headlineTop,
     width: columnWidth,
-    height: columnHeight,
+    height: pageHeight - headlineTop - gutter,
   }
 
-  const openaiSize = Math.round(Math.max(260, Math.min(390, pageWidth * 0.25)))
   const openaiRect: Rect = {
-    x: leftRegion.x - Math.round(openaiSize * 0.06),
-    y: pageHeight - gutter - openaiSize + Math.round(openaiSize * 0.03),
+    x: leftRegion.x - Math.round(openaiSize * 0.16),
+    y: pageHeight - gutter - openaiSize + Math.round(openaiSize * 0.045),
     width: openaiSize,
     height: openaiSize,
   }
 
-  const claudeSize = Math.round(Math.max(220, Math.min(340, pageWidth * 0.21)))
   const claudeRect: Rect = {
-    x: rightRegion.x + rightRegion.width - Math.round(claudeSize * 0.61),
-    y: Math.round(Math.max(36, headlineTop - 4)),
+    x: pageWidth - Math.round(claudeSize * 0.48),
+    y: -Math.round(claudeSize * 0.34),
     width: claudeSize,
     height: claudeSize,
   }
 
-  headline.style.left = `${gutter}px`
-  headline.style.top = `${headlineTop}px`
-  headline.style.width = `${headlineWidth}px`
+  return {
+    gutter,
+    headlineTop,
+    headlineWidth,
+    headlineFontSize,
+    headlineLineHeight,
+    headlineLines,
+    headlineRects,
+    creditTop,
+    leftRegion,
+    rightRegion,
+    openaiRect,
+    claudeRect,
+  }
+}
 
-  credit.style.left = `${gutter + 4}px`
-  credit.style.top = `${copyTop - Math.round(Math.max(34, lineHeight * 1.8))}px`
-  credit.style.width = `${Math.round(Math.min(headlineWidth, pageWidth * 0.36))}px`
-
-  openaiLogo.style.left = `${openaiRect.x}px`
-  openaiLogo.style.top = `${openaiRect.y}px`
-  openaiLogo.style.width = `${openaiRect.width}px`
-  openaiLogo.style.height = `${openaiRect.height}px`
-
-  claudeLogo.style.left = `${claudeRect.x}px`
-  claudeLogo.style.top = `${claudeRect.y}px`
-  claudeLogo.style.width = `${claudeRect.width}px`
-  claudeLogo.style.height = `${claudeRect.height}px`
-
-  clearRenderedLines()
+async function evaluateLayout(
+  pageWidth: number,
+  pageHeight: number,
+  lineHeight: number,
+  preparedBody: PreparedTextWithSegments,
+): Promise<{
+  layout: ReturnType<typeof buildLayout>
+  leftLines: PositionedLine[]
+  rightLines: PositionedLine[]
+}> {
+  const layout = buildLayout(pageWidth, pageHeight, lineHeight)
 
   const [openaiMask, claudeMask] = await Promise.all([
-    makeImageMask(openaiLogo.src, openaiRect.width, openaiRect.height),
-    makeImageMask(claudeLogo.src, claudeRect.width, claudeRect.height),
+    getMask(openaiLogo.src, layout.openaiRect.width, layout.openaiRect.height),
+    getMask(claudeLogo.src, layout.claudeRect.width, layout.claudeRect.height),
   ])
 
-  renderColumn(
-    getPrepared(LEFT_COPY, font),
-    leftRegion,
-    font,
+  const openaiObstacle: BandObstacle = {
+    getIntervals(bandTop, bandBottom) {
+      const interval = getMaskIntervalForBand(
+        openaiMask,
+        layout.openaiRect,
+        bandTop,
+        bandBottom,
+        Math.round(lineHeight * 1.15),
+        Math.round(lineHeight * 0.45),
+      )
+      return interval === null ? [] : [interval]
+    },
+  }
+
+  const claudeObstacle: BandObstacle = {
+    getIntervals(bandTop, bandBottom) {
+      const interval = getMaskIntervalForBand(
+        claudeMask,
+        layout.claudeRect,
+        bandTop,
+        bandBottom,
+        Math.round(lineHeight * 1.05),
+        Math.round(lineHeight * 0.42),
+      )
+      return interval === null ? [] : [interval]
+    },
+  }
+
+  const titleObstacle: BandObstacle = {
+    getIntervals(bandTop, bandBottom) {
+      return getRectIntervalsForBand(
+        layout.headlineRects,
+        bandTop,
+        bandBottom,
+        Math.round(lineHeight * 0.95),
+        Math.round(lineHeight * 0.3),
+      )
+    },
+  }
+
+  const leftResult = layoutColumn(
+    preparedBody,
+    { segmentIndex: 0, graphemeIndex: 0 },
+    layout.leftRegion,
     lineHeight,
-    openaiRect,
-    openaiMask,
-    { horizontal: Math.round(lineHeight * 1.15), vertical: Math.round(lineHeight * 0.45) },
-    'line line--left',
+    [openaiObstacle],
     'left',
   )
 
-  renderColumn(
-    getPrepared(RIGHT_COPY, font),
-    rightRegion,
-    font,
+  const rightResult = layoutColumn(
+    preparedBody,
+    leftResult.cursor,
+    layout.rightRegion,
     lineHeight,
-    claudeRect,
-    claudeMask,
-    { horizontal: Math.round(lineHeight * 1.05), vertical: Math.round(lineHeight * 0.42) },
-    'line line--right',
+    [titleObstacle, claudeObstacle, openaiObstacle],
     'right',
   )
+
+  return {
+    layout,
+    leftLines: leftResult.lines,
+    rightLines: rightResult.lines,
+  }
+}
+
+async function render(): Promise<void> {
+  const { font, lineHeight } = getTypography()
+  const pageWidth = window.innerWidth
+  const pageHeight = window.innerHeight
+  const preparedBody = getPrepared(BODY_COPY, font)
+  const evaluation = await evaluateLayout(pageWidth, pageHeight, lineHeight, preparedBody)
+  const layout = evaluation.layout
+  const leftLines = evaluation.leftLines
+  const rightLines = evaluation.rightLines
+  stage.style.height = `${pageHeight}px`
+
+  openaiLogo.style.left = `${layout.openaiRect.x}px`
+  openaiLogo.style.top = `${layout.openaiRect.y}px`
+  openaiLogo.style.width = `${layout.openaiRect.width}px`
+  openaiLogo.style.height = `${layout.openaiRect.height}px`
+
+  claudeLogo.style.left = `${layout.claudeRect.x}px`
+  claudeLogo.style.top = `${layout.claudeRect.y}px`
+  claudeLogo.style.width = `${layout.claudeRect.width}px`
+  claudeLogo.style.height = `${layout.claudeRect.height}px`
+
+  headline.style.left = `${layout.gutter}px`
+  headline.style.top = `${layout.headlineTop}px`
+  headline.style.width = `${layout.headlineWidth}px`
+  headline.textContent = ''
+  headline.style.font = `700 ${layout.headlineFontSize}px ${HEADLINE_FONT_FAMILY}`
+  headline.style.lineHeight = `${layout.headlineLineHeight}px`
+  headline.style.letterSpacing = '0px'
+  headline.style.height = `${layout.headlineLines.length * layout.headlineLineHeight}px`
+
+  for (const [index, line] of layout.headlineLines.entries()) {
+    const el = document.createElement('div')
+    el.className = 'headline-line'
+    el.textContent = line.text
+    el.style.left = '0px'
+    el.style.top = `${index * layout.headlineLineHeight}px`
+    el.style.font = `700 ${layout.headlineFontSize}px ${HEADLINE_FONT_FAMILY}`
+    el.style.lineHeight = `${layout.headlineLineHeight}px`
+    headline.appendChild(el)
+  }
+
+  credit.style.left = `${layout.gutter + 4}px`
+  credit.style.top = `${layout.creditTop}px`
+  credit.style.width = 'auto'
+
+  stage.style.minHeight = `${pageHeight}px`
+  clearRenderedLines()
+  materializeLines(leftLines, 'line line--left', font, lineHeight)
+  materializeLines(rightLines, 'line line--right', font, lineHeight)
 }
 
 function scheduleRender(): void {
