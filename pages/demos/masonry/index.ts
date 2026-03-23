@@ -29,7 +29,6 @@ const cardY = new Float64Array(thoughts.length)
 const cardH = new Float64Array(thoughts.length)
 let layoutColWidth = 0
 let layoutMaxColHeight = 0
-let layoutOffsetLeft = 0
 let lastLayoutWidth = -1
 
 function recomputeLayout(windowWidth: number) {
@@ -66,7 +65,6 @@ function recomputeLayout(windowWidth: number) {
 
   layoutColWidth = colWidth
   layoutMaxColHeight = maxH
-  layoutOffsetLeft = offsetLeft
   lastLayoutWidth = windowWidth
 }
 
